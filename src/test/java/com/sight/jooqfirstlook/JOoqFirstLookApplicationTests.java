@@ -13,7 +13,7 @@ class JOoqFirstLookApplicationTests {
     DSLContext dslContext;
 
     @Test
-    void test() {
+    void selectWithJooq() {
         dslContext.selectFrom(JActor.ACTOR)
                 .limit(10)
                 .fetch();
