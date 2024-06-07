@@ -1,0 +1,104 @@
+buildscript {
+    ext {
+        jooqVersion = '3.19.8'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.5'
+    id 'nu.studer.jooq' version '9.0'
+}
+
+group = 'com.sight'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // jOOQ 의존성 수동설정
+    implementation('org.springframework.boot:spring-boot-starter-jooq') {
+        exclude group: 'org.jooq:jooq'
+    }
+
+    implementation "org.jooq:jooq:${jooqVersion}"
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    jooqGenerator project(':jOOQ-custom')
+    jooqGenerator "org.jooq:jooq:${jooqVersion}"
+    jooqGenerator "org.jooq:jooq-meta:${jooqVersion}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+String dbUser   = System.properties["db-user"]   ?: "root"
+String dbPasswd = System.properties["db-passwd"] ?: "passwd"
+
+jooq {
+    version = "${jooqVersion}"
+    configurations {
+        sakilaDb {
+            generationTool {
+                jdbc {
+                    driver = 'com.mysql.cj.jdbc.Driver'
+                    url = 'jdbc:mysql://localhost:3306'
+                    user = "${dbUser}"
+                    password = "${dbPasswd}"
+                }
+
+                generator {
+                    name = 'org.jooq.codegen.DefaultGenerator'
+                    database {
+                        name = 'org.jooq.meta.mysql.MySQLDatabase'
+                        unsignedTypes = false
+                        schemata {
+                            schema {
+                                inputSchema = 'sakila'
+                            }
+                        }
+                    }
+
+                    generate {
+                        daos = true
+                        records = true
+                        fluentSetters = true
+                        javaTimeTypes = true
+                        deprecated = false
+
+//                        jpaAnnotations = true
+//                        jpaVersion = 2.2
+//                        validationAnnotations = true  // 컬럼의 조건에 맞는 validation 어노테이션을 붙여줌
+//                        springAnnotations = true
+//                        springDao = true
+                    }
+
+                    target {
+                        directory = 'src/generated'
+                    }
+
+                    // 왜 따로 서브모듈로 분리를 한걸까?
+                    strategy.name = 'jooq.custom.generator.JPrefixGeneratorStrategy'
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "src/generated"]
+            }
+        }
+    }
+}

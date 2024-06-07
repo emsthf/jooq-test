@@ -1,0 +1,3 @@
+rootProject.name = 'jOOQ-first-look'
+include 'jOOQ-custom'
+

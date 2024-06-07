@@ -1,0 +1,13 @@
+spring:
+  jooq:
+    sql-dialect: MySQL
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/sakila
+    username: root
+    password: passwd
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+logging:
+  level:
+    org.jooq.tools.LoggerListener: debug
