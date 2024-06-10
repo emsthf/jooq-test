@@ -1,7 +1,6 @@
 package com.sight.jooqfirstlook.actor;
 
 import org.jooq.Condition;
-import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.generated.tables.JActor;
@@ -27,8 +26,8 @@ public class ActorRepository {
     private final ActorDao actorDao;
     private final JActor ACTOR = JActor.ACTOR;
 
-    public ActorRepository(DSLContext dslContext, Configuration configuration) {
-        this.actorDao = new ActorDao(configuration);
+    public ActorRepository(DSLContext dslContext) {
+        this.actorDao = new ActorDao(dslContext.configuration());
         this.dslContext = dslContext;
     }
 
@@ -203,5 +202,11 @@ public class ActorRepository {
         ActorRecord record = dslContext.fetchOne(ACTOR, ACTOR.ACTOR_ID.eq(newActorId));
 
         return record.delete();
+    }
+
+    public ActorRecord findRecordByActorId(Long actorId) {
+//        ActorRecord actorRecord = new ActorRecord();  // ActiveRecord를 이렇게 new로 생성하면 JDBC 환경들이 설정되지 않는다. 그래서 insert나 delete 메서드를 호출하면 동작하지 않을 것.
+        // ActiveRecord는 무조건 DSLContext를 통해서 생성해야 한다.
+        return dslContext.fetchOne(ACTOR, ACTOR.ACTOR_ID.eq(actorId));
     }
 }

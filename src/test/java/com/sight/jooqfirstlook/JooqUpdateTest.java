@@ -115,6 +115,5 @@ class JooqUpdateTest {
 
         // then
         assertThat(result).isEqualTo(1);
-
     }
 }
