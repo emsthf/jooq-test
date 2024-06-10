@@ -1,11 +1,11 @@
 package com.sight.jooqfirstlook.film;
 
+import com.sight.jooqfirstlook.config.converter.PriceCategoryConverter;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.DatePart;
 import org.jooq.generated.tables.*;
 import org.jooq.generated.tables.pojos.Film;
-import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -67,7 +67,7 @@ public class FilmRepository {
                         case_()
                                 .when(FILM.RENTAL_RATE.le(BigDecimal.valueOf(1.0)), "Cheap")
                                 .when(FILM.RENTAL_RATE.le(BigDecimal.valueOf(3.0)), "Moderate")
-                                .else_("Expensive").as("priceCategory"),
+                                .else_("Expensive").as("priceCategory").convert(new PriceCategoryConverter()),
                         selectCount().from(INVENTORY).where(INVENTORY.FILM_ID.eq(FILM.FILM_ID)).asField("total_inventory")
                 )
                 .from(FILM)
