@@ -15,7 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-public class JooqInsertTest {
+class JooqInsertTest {
 
     @Autowired
     ActorRepository actorRepository;
@@ -66,7 +66,7 @@ public class JooqInsertTest {
         actor.setLastUpdate(LocalDateTime.now());
 
         // when
-        Long pk = actorRepository.saveReturningPkOnly(actor);
+        Long pk = actorRepository.saveWithReturningPkOnly(actor);
 
         // then
         assertThat(pk).isNotNull();
@@ -82,7 +82,7 @@ public class JooqInsertTest {
         actor.setLastName("Doe");
 
         // when
-        Actor newActor = actorRepository .saveReturning(actor);
+        Actor newActor = actorRepository .saveWithReturning(actor);
 
         // then
         assertThat(newActor).hasNoNullFieldsOrProperties();
