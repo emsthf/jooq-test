@@ -1,3 +1,5 @@
+import org.jooq.meta.jaxb.*
+
 buildscript {
     ext {
         jooqVersion = '3.19.8'
@@ -8,7 +10,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.0'
     id 'io.spring.dependency-management' version '1.1.5'
-    id 'nu.studer.jooq' version '9.0'
+    id 'dev.monosoul.jooq-docker' version '6.0.14'  // 이 플러그인 내부에서 자체적으로 TestContainer 를 사용하기 때문에 TestContainer는 따로 설정 필요X
 }
 
 group = 'com.sight'
@@ -29,9 +31,13 @@ dependencies {
     }
 
     implementation "org.jooq:jooq:${jooqVersion}"
-    jooqGenerator project(':jOOQ-custom')
-    jooqGenerator "org.jooq:jooq:${jooqVersion}"
-    jooqGenerator "org.jooq:jooq-meta:${jooqVersion}"
+    jooqCodegen project(':jOOQ-custom')
+    jooqCodegen "org.jooq:jooq:${jooqVersion}"
+    jooqCodegen "org.jooq:jooq-meta:${jooqVersion}"
+    jooqCodegen "org.jooq:jooq-codegen:${jooqVersion}"
+
+    jooqCodegen 'org.flywaydb:flyway-core:10.8.1'
+    jooqCodegen 'org.flywaydb:flyway-mysql:10.8.1'
 
     runtimeOnly 'com.mysql:mysql-connector-j'
     compileOnly 'org.projectlombok:lombok'
@@ -50,76 +56,57 @@ String dbPasswd = System.properties["db-passwd"] ?: "passwd"
 
 jooq {
     version = "${jooqVersion}"
-    configurations {
-        sakilaDb {
-            generationTool {
-                jdbc {
-                    driver = 'com.mysql.cj.jdbc.Driver'
-                    url = 'jdbc:mysql://localhost:3306'
-                    user = "${dbUser}"
-                    password = "${dbPasswd}"
-                }
+    withContainer {
+        image {
+            name = "mysql:8.0.29"  // TestContainer 에서 사용할 mysql 버전
+            envVars = [  // 도커의 환경변수
+                    MYSQL_ROOT_PASSWORD: "passwd",
+                    MYSQL_DATABASE     : "sakila"
+            ]
+        }
 
-                generator {
-                    name = 'org.jooq.codegen.DefaultGenerator'
-                    database {
-                        name = 'org.jooq.meta.mysql.MySQLDatabase'
-                        unsignedTypes = true
-                        schemata {
-                            schema {
-                                inputSchema = 'sakila'
-                            }
-                        }
-
-                        // 강제로 타입을 매핑할 수 있음
-                        forcedTypes {
-                            forcedType {
-                                userType = 'java.lang.Long'
-                                includeTypes = 'int unsigned'
-                            }
-
-                            forcedType {
-                                userType = 'java.lang.Integer'
-                                includeTypes = 'tinyint unsigned'
-                            }
-
-                            forcedType {
-                                userType = 'java.lang.Integer'
-                                includeTypes = 'smallint unsigned'
-                            }
-                        }
-                    }
-
-                    generate {
-                        daos = true
-                        records = true
-                        fluentSetters = true
-                        javaTimeTypes = true
-                        deprecated = false
-
-//                        jpaAnnotations = true
-//                        jpaVersion = 2.2
-//                        validationAnnotations = true  // 컬럼의 조건에 맞는 validation 어노테이션을 붙여줌
-//                        springAnnotations = true
-//                        springDao = true
-                    }
-
-                    target {
-                        directory = 'src/generated'
-                    }
-
-                    // 왜 따로 서브모듈로 분리를 한걸까?
-                    strategy.name = 'jooq.custom.generator.JPrefixGeneratorStrategy'
-                }
+        db {
+            username = "root"
+            password = "passwd"
+            name = "sakila"
+            port = 3306
+            jdbc {
+                schema = "jdbc:mysql"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
             }
         }
     }
+}
 
-    sourceSets {
-        main {
-            java {
-                srcDirs = ["src/main/java", "src/generated"]
-            }
+tasks {
+    generateJooqClasses {
+        schemas.set(["sakila"])
+        outputDirectory.set(project.layout.projectDirectory.dir("src/generated"))
+        includeFlywayTable.set(false)  // Flyway 테이블은 DSL 생성 X
+
+        usingJavaConfig {
+            generate = new Generate()
+                    .withJavaTimeTypes(true)
+                    .withDeprecated(false)
+                    .withDaos(true)
+                    .withFluentSetters(true)
+                    .withRecords(true)
+
+            withStrategy(
+                    new Strategy().withName("jooq.custom.generator.JPrefixGeneratorStrategy")
+            )
+
+            database.withForcedTypes(
+                    new ForcedType()
+                            .withUserType("java.lang.Long")
+                            .withTypes("int unsigned"),
+                    new ForcedType()
+                            .withUserType("java.lang.Integer")
+                            .withTypes("tinyint unsigned"),
+                    new ForcedType()
+                            .withUserType("java.lang.Integer")
+                            .withTypes("smallint unsigned")
+            )
         }
     }
 }
