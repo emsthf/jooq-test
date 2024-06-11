@@ -30,9 +30,16 @@ dependencies {
 
     implementation "org.jooq:jooq:${jooqVersion}"
     jooqGenerator project(':jOOQ-custom')
+    // codegen 시점에 entity 모듈 포함
+    jooqGenerator project(':entity')
     jooqGenerator "org.jooq:jooq:${jooqVersion}"
     jooqGenerator "org.jooq:jooq-meta:${jooqVersion}"
+    jooqGenerator "org.jooq:jooq-meta-extensions-hibernate:${jooqVersion}"
+    // in-memory H2로 JOOQ dsl 생성을 위함
+    // h2의 v2 버전 호환성 때문에 상위버전 대신 1.4.200 버전을 추천
+    jooqGenerator 'com.h2database:h2:1.4.200'
 
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.mysql:mysql-connector-j'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -53,21 +60,22 @@ jooq {
     configurations {
         sakilaDb {
             generationTool {
-                jdbc {
-                    driver = 'com.mysql.cj.jdbc.Driver'
-                    url = 'jdbc:mysql://localhost:3306'
-                    user = "${dbUser}"
-                    password = "${dbPasswd}"
-                }
 
                 generator {
                     name = 'org.jooq.codegen.DefaultGenerator'
                     database {
-                        name = 'org.jooq.meta.mysql.MySQLDatabase'
+                        name = 'org.jooq.meta.extensions.jpa.JPADatabase'
                         unsignedTypes = true
-                        schemata {
-                            schema {
-                                inputSchema = 'sakila'
+                        properties {
+                            property {
+                                key = 'packages'
+                                value = 'com.sight.entity'
+                            }
+
+                            // DSL 생성시, jpa의 AttributeConverters 에 따라 jooq DSL의 타입을 매핑할지 여부
+                            property {
+                                key = 'useAttributeConverters'
+                                value = true
                             }
                         }
 
