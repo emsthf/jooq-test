@@ -57,6 +57,32 @@ public class FilmRepository {
                 .fetchInto(FilmWithActor.class);
     }
 
+    public List<FilmWithActor> findFilmWithActorListImplicitPathJoin(Long page, Long pageSize) {
+        return dslContext.select(
+                        row(FILM.fields()),
+                        row(FILM.filmActor().fields()),
+                        row(FILM.filmActor().actor().fields())
+                )
+                .from(FILM)
+                .offset((page - 1) * pageSize)
+                .limit(pageSize)
+                .fetchInto(FilmWithActor.class);
+    }
+
+    public List<FilmWithActor> findFilmWithActorListExplicitPathJoin(Long page, Long pageSize) {
+        return dslContext.select(
+                        row(FILM.fields()),
+                        row(FILM.filmActor().fields()),
+                        row(FILM.filmActor().actor().fields())
+                )
+                .from(FILM)
+                .join(FILM.filmActor())
+                .join(FILM.filmActor().actor())
+                .offset((page - 1) * pageSize)
+                .limit(pageSize)
+                .fetchInto(FilmWithActor.class);
+    }
+
     public List<FilmPriceSummary> findFilmPriceSummaryByFilmTitle(String filmTitle) {
         final JInventory INVENTORY = JInventory.INVENTORY;
 
