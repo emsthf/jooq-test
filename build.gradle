@@ -97,8 +97,8 @@ jooq {
                         javaTimeTypes = true
                         deprecated = false
 
-//                        jpaAnnotations = true
-//                        jpaVersion = 2.2
+                        jpaAnnotations = true
+                        jpaVersion = 2.2
 //                        validationAnnotations = true  // 컬럼의 조건에 맞는 validation 어노테이션을 붙여줌
 //                        springAnnotations = true
 //                        springDao = true
